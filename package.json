@@ -10,7 +10,8 @@
     "build": "turbo build",
     "lint": "biome lint --write .",
     "format": "biome format --write .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "postinstall": "turbo run install"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.7",

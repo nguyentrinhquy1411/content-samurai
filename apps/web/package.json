@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "install": "",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -10,7 +11,7 @@
     "format": "biome format --write ."
   },
   "dependencies": {
-    "@repo/types": "workspace:*",
+    "@repo/types": "*",
     "next": "16.0.5",
     "react": "19.2.0",
     "react-dom": "19.2.0"
