@@ -58,3 +58,15 @@ go.work
 .venv/
 __pycache__/
 *.pyc
+
+# Python tools & caches
+.python-version
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Turbo repo cache
+.turbo/

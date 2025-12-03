@@ -1,7 +1,8 @@
 [project]
 name = "agent"
 version = "0.1.0"
-description = "Content Samurai Agent"
+description = "Add your description here"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "requests",
@@ -15,7 +16,10 @@ dependencies = [
     "uvicorn",
     "redis",
     "rq",
+    "langchain-ollama>=1.0.0",
 ]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = [
+    "ruff>=0.14.7",
+]

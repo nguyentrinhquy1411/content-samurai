@@ -1,12 +1,8 @@
-import sys
-from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Add parent directory to path to import modules
-sys.path.append(str(Path(__file__).parent.parent.parent))
 from app.tools.web_scraper import scrape_content, search_google_urls
 from config import CONFIG
 

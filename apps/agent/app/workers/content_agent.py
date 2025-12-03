@@ -1,10 +1,19 @@
-def process_content_task(task_id: str, keyword: str):
-    """
-    Process a content generation task.
+from langchain_ollama import ChatOllama
 
-    Args:
-        task_id: Unique identifier for the task
-        keyword: Target keyword for content generation
-    """
-    print(f"Processing task {task_id} for keyword: {keyword}")
-    # TODO: Implement content generation logic
+from config import CONFIG
+
+llm = ChatOllama(
+    base_url=CONFIG.BASE_URL,
+    client_kwargs={"headers": {"Authorization": f"Bearer {CONFIG.OLLAMA_API_KEY}"}},
+    model="gpt-oss:120b-cloud",
+)
+
+messages = [
+    (
+        "system",
+        "You are a helpful assistant that translates Vietnamese to English. Translate the user sentence.",
+    ),
+    ("human", "Xin chào thằng mọi đen"),
+]
+ai_msg = llm.invoke(messages)
+print(ai_msg.content)

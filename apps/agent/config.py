@@ -11,6 +11,7 @@ class Config:
 
     OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY")
     SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+    BASE_URL = os.getenv("BASE_URL", "https://ollama.com")
 
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -20,6 +21,10 @@ class Config:
     def check_keys(cls):
         if not cls.OLLAMA_API_KEY:
             raise ValueError("OLLAMA_API_KEY is not set")
+        if not cls.SERPAPI_API_KEY:
+            raise ValueError("SERPAPI_API_KEY is not set")
+        if not cls.BASE_URL:
+            raise ValueError("BASE_URL is not set")
         if not cls.REDIS_HOST:
             raise ValueError("REDIS_HOST is not set")
         if not cls.REDIS_PORT:

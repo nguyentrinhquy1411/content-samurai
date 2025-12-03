@@ -2,7 +2,7 @@ import sys
 
 import uvicorn
 
-from config import CONFIG
+from .config import CONFIG
 
 
 def main():
