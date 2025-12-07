@@ -1,9 +1,11 @@
-from typing import List, Optional
+import json
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.tools.web_scraper import scrape_content, search_google_urls
+from app.workers.content_agent import create_seo_blog, stream_seo_blog
 from config import CONFIG
 
 app = FastAPI(
@@ -14,34 +16,13 @@ app = FastAPI(
 
 
 # Request/Response Models
-class SearchRequest(BaseModel):
-    query: str
+class CreateBlogRequest(BaseModel):
+    topic: str
 
 
-class SearchResponse(BaseModel):
-    query: str
-    urls: List[str]
-
-
-class ScrapeRequest(BaseModel):
-    url: str
-
-
-class ScrapeResponse(BaseModel):
-    url: str
-    content: Optional[str]
-    success: bool
-
-
-class SearchAndScrapeRequest(BaseModel):
-    query: str
-
-
-class SearchAndScrapeResponse(BaseModel):
-    query: str
-    urls: List[str]
-    top_url: Optional[str]
-    content: Optional[str]
+class CreateBlogResponse(BaseModel):
+    topic: str
+    content: str
     success: bool
 
 
@@ -60,9 +41,8 @@ async def root():
         "endpoints": {
             "health": "/health",
             "config": "/config",
-            "search": "/api/search",
-            "scrape": "/api/scrape",
-            "search_and_scrape": "/api/search-and-scrape",
+            "create_blog": "/api/create-blog",
+            "create_blog_stream": "/api/create-blog/stream",
         },
     }
 
@@ -82,96 +62,65 @@ async def get_config():
     }
 
 
-@app.post("/api/search", response_model=SearchResponse)
-async def search(request: SearchRequest):
+@app.post("/api/create-blog", response_model=CreateBlogResponse)
+async def create_blog(request: CreateBlogRequest):
     """
-    Search Google using SerpApi and return top 5 URLs.
+    Create an SEO-optimized blog post using the content agent worker.
+    Returns the complete blog post after generation finishes.
 
     Example:
-        POST /api/search
+        POST /api/create-blog
         {
-            "query": "golang best practices"
+            "topic": "How to make Phở in 2025"
         }
     """
-    if not request.query or len(request.query.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    if not request.topic or len(request.topic.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Topic cannot be empty")
 
     try:
-        urls = search_google_urls(request.query)
-        return {"query": request.query, "urls": urls}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
-
-
-@app.post("/api/scrape", response_model=ScrapeResponse)
-async def scrape(request: ScrapeRequest):
-    """
-    Scrape content from a given URL.
-
-    Example:
-        POST /api/scrape
-        {
-            "url": "https://example.com/article"
-        }
-    """
-    if not request.url or len(request.url.strip()) == 0:
-        raise HTTPException(status_code=400, detail="URL cannot be empty")
-
-    if not request.url.startswith(("http://", "https://")):
-        raise HTTPException(
-            status_code=400, detail="URL must start with http:// or https://"
-        )
-
-    try:
-        content = scrape_content(request.url)
+        content = create_seo_blog(request.topic)
         return {
-            "url": request.url,
+            "topic": request.topic,
             "content": content,
-            "success": content is not None,
+            "success": content is not None and len(content) > 0,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Blog creation failed: {str(e)}")
 
 
-@app.post("/api/search-and-scrape", response_model=SearchAndScrapeResponse)
-async def search_and_scrape(request: SearchAndScrapeRequest):
+@app.post("/api/create-blog/stream")
+async def create_blog_stream(request: CreateBlogRequest):
     """
-    Search Google and scrape content from the top result.
+    Create an SEO-optimized blog post using streaming (Server-Sent Events).
+    Streams content chunks as they are generated.
 
     Example:
-        POST /api/search-and-scrape
+        POST /api/create-blog/stream
         {
-            "query": "golang tutorial"
+            "topic": "How to make Phở in 2025"
         }
     """
-    if not request.query or len(request.query.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    if not request.topic or len(request.topic.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Topic cannot be empty")
 
-    try:
-        # Search for URLs
-        urls = search_google_urls(request.query)
+    async def generate_stream():
+        try:
+            async for chunk in stream_seo_blog(request.topic):
+                # Format as SSE with JSON-encoded data
+                data = json.dumps({"chunk": chunk})
+                yield f"data: {data}\n\n"
+            # Send completion signal
+            yield "data: " + json.dumps({"done": True}) + "\n\n"
+        except Exception as e:
+            error_data = json.dumps({"error": str(e)})
+            yield f"data: {error_data}\n\n"
 
-        if not urls:
-            return {
-                "query": request.query,
-                "urls": [],
-                "top_url": None,
-                "content": None,
-                "success": False,
-            }
-
-        # Scrape the first URL
-        top_url = urls[0]
-        content = scrape_content(top_url)
-
-        return {
-            "query": request.query,
-            "urls": urls,
-            "top_url": top_url,
-            "content": content,
-            "success": content is not None,
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Search and scrape failed: {str(e)}"
-        )
+    return StreamingResponse(
+        generate_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
