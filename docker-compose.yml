@@ -1,0 +1,21 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.1.6-management
+    container_name: content-samurai-rabbit
+    hostname: samurai-rabbit
+    ports:
+      # AMQP protocol (for app/worker connections)
+      - "5672:5672"
+      # Management UI (for your browser)
+      - "15672:15672"
+    environment:
+      # Set credentials from environment variables
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      # Keeps your queues/settings safe on the host machine
+      - rabbit_data:/var/lib/rabbitmq
+    restart: always
+
+volumes:
+  rabbit_data:

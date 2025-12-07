@@ -1,34 +1,31 @@
+// cmd/server/main.go
 package main
 
 import (
-	"net/http"
+	"log"
 
 	"github.com/gin-gonic/gin"
+
+	httpRouter "content-samurai/api/internal/http"
 )
 
 func main() {
-	// Initialize Gin engine
-	r := gin.Default()
+	// cfg := config.Load()
 
-	// Define a simple health check route
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "API is running",
-		})
-	})
+	// mq, err := queue.New(cfg.RabbitURL)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	// Example route
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
+	// redis := stream.New(cfg.RedisAddr)
 
-	// Start the server on port 8080
-	// Error handling for server startup
-	if err := r.Run(":8080"); err != nil {
-		panic("Failed to start server: " + err.Error())
-	}
+	router := gin.Default()
+
+	// bh := &handlers.BlogHandler{MQ: mq}
+	//    sh := &handlers.SSEHandler{Redis: redis}
+
+	httpRouter.Setup(router)
+
+	log.Println("🚀 API running on :8080")
+	router.Run(":8080")
 }
-
