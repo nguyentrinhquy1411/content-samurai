@@ -70,3 +70,4 @@ htmlcov/
 
 # Turbo repo cache
 .turbo/
+.tanstack/
