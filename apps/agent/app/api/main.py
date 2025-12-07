@@ -1,11 +1,11 @@
 import json
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.workers.content_agent import create_seo_blog, stream_seo_blog
+from app.workers.tools import search_and_get_results
 from config import CONFIG
 
 app = FastAPI(
@@ -17,6 +17,10 @@ app = FastAPI(
 
 # Request/Response Models
 class CreateBlogRequest(BaseModel):
+    topic: str
+
+
+class SearchRequest(BaseModel):
     topic: str
 
 
@@ -82,7 +86,7 @@ async def create_blog(request: CreateBlogRequest):
         return {
             "topic": request.topic,
             "content": content,
-            "success": content is not None and len(content) > 0,
+            "success": content is not None,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Blog creation failed: {str(e)}")
@@ -124,3 +128,28 @@ async def create_blog_stream(request: CreateBlogRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.post("/api/search")
+async def search_content(request: SearchRequest):
+    """
+    Search for content sources on a given topic.
+
+    Example:
+        POST /api/search
+        {
+            "topic": "How to make Phở in 2025"
+        }
+    """
+    if not request.topic or len(request.topic.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Topic cannot be empty")
+
+    try:
+        context = search_and_get_results(request.topic)
+        return {
+            "topic": request.topic,
+            "context": context,
+            "success": context is not None and len(context) > 0,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")

@@ -2,8 +2,8 @@ import asyncio
 from typing import AsyncGenerator
 
 from langchain_ollama import ChatOllama
-from langchain_tavily import TavilySearch
 
+from app.workers.tools import search_and_get_results
 from config import CONFIG
 
 llm = ChatOllama(
@@ -14,34 +14,11 @@ llm = ChatOllama(
     num_ctx=12288,
 )
 
-search_tool = TavilySearch(max_results=5)
 
-
-# print(search_tool)
-
-
-# messages = [
-#     (
-#         "system",
-#         "You are a helpful assistant that translates Vietnamese to English. Translate the user sentence.",
-#     ),
-#     ("human", "Xin chào thằng mọi đen"),
-# ]
-# ai_msg = llm.invoke(messages)
-# print(ai_msg.content)
-#
 def create_seo_blog(topic: str):
     print(f"--- Fetching 5 sources for: {topic} ---")
 
-    # Run the search
-    response = search_tool.invoke({"query": topic})
-    search_results = response.get("results", [])
-    print(search_results)
-
-    # Format the search context for the model
-    context = ""
-    for idx, result in enumerate(search_results):
-        context += f"\nSource {idx + 1} ({result['url']}):\n{result['content']}\n"
+    context = search_and_get_results(topic)
 
     # Define the professional persona and blogging task
     messages = [
@@ -82,15 +59,7 @@ async def stream_seo_blog(topic: str) -> AsyncGenerator[str, None]:
     """
     print(f"--- Fetching 5 sources for: {topic} ---")
 
-    # Run the search
-    response = search_tool.invoke({"query": topic})
-    search_results = response.get("results", [])
-    print(search_results)
-
-    # Format the search context for the model
-    context = ""
-    for idx, result in enumerate(search_results):
-        context += f"\nSource {idx + 1} ({result['url']}):\n{result['content']}\n"
+    context = search_and_get_results(topic)
 
     # Define the professional persona and blogging task
     messages = [
