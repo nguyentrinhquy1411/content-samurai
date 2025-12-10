@@ -148,9 +148,9 @@ export function BlogGenerator() {
 
   const getSEOScoreColor = (score?: number) => {
     if (!score) return "text-muted-foreground";
-    if (score >= 85) return "text-green-600 dark:text-green-400";
-    if (score >= 70) return "text-yellow-600 dark:text-yellow-400";
-    return "text-red-600 dark:text-red-400";
+    if (score >= 85) return "text-chart-1";
+    if (score >= 70) return "text-chart-2";
+    return "text-destructive";
   };
 
   return (
@@ -372,10 +372,10 @@ export function BlogGenerator() {
           {/* SEO Metrics Dashboard */}
           {content &&
             (seoMetadata.metaDescription || seoMetadata.wordCount) && (
-              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 metrics-enter">
+              <Card className="border-primary/30 bg-accent/50 metrics-enter">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-blue-600" />
+                    <BarChart3 className="h-4 w-4 text-primary" />
                     SEO Metrics
                     {seoMetadata.seoScore !== undefined && (
                       <Badge variant="outline" className="ml-auto">
@@ -396,7 +396,7 @@ export function BlogGenerator() {
                       <p className="text-xs font-medium text-muted-foreground mb-1">
                         Meta Description
                       </p>
-                      <p className="text-sm bg-white dark:bg-gray-900 p-2 rounded border">
+                      <p className="text-sm bg-card p-2 rounded border">
                         {seoMetadata.metaDescription}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -417,9 +417,9 @@ export function BlogGenerator() {
                   {/* Metrics Grid */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {seoMetadata.wordCount !== undefined && (
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border">
+                      <div className="bg-card p-3 rounded border">
                         <p className="text-xs text-muted-foreground">Words</p>
-                        <p className="text-xl font-bold text-blue-600">
+                        <p className="text-xl font-bold text-primary">
                           {seoMetadata.wordCount.toLocaleString()}
                         </p>
                         {seoMetadata.readingTime && (
@@ -430,30 +430,30 @@ export function BlogGenerator() {
                       </div>
                     )}
                     {seoMetadata.h2Count !== undefined && (
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border">
+                      <div className="bg-card p-3 rounded border">
                         <p className="text-xs text-muted-foreground">
                           H2 Sections
                         </p>
-                        <p className="text-xl font-bold text-green-600">
+                        <p className="text-xl font-bold text-chart-1">
                           {seoMetadata.h2Count}
                         </p>
                       </div>
                     )}
                     {seoMetadata.h3Count !== undefined && (
-                      <div className="bg-white dark:bg-gray-900 p-3 rounded border">
+                      <div className="bg-card p-3 rounded border">
                         <p className="text-xs text-muted-foreground">
                           H3 Subsections
                         </p>
-                        <p className="text-xl font-bold text-purple-600">
+                        <p className="text-xl font-bold text-chart-3">
                           {seoMetadata.h3Count}
                         </p>
                       </div>
                     )}
                     {seoMetadata.faqCount !== undefined &&
                       seoMetadata.faqCount > 0 && (
-                        <div className="bg-white dark:bg-gray-900 p-3 rounded border">
+                        <div className="bg-card p-3 rounded border">
                           <p className="text-xs text-muted-foreground">FAQs</p>
-                          <p className="text-xl font-bold text-orange-600">
+                          <p className="text-xl font-bold text-chart-4">
                             {seoMetadata.faqCount}
                           </p>
                         </div>
