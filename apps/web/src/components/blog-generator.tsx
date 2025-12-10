@@ -350,10 +350,7 @@ export function BlogGenerator() {
 
           {/* Job ID Status */}
           {jobId && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="font-mono text-xs bg-muted px-2 py-1 rounded">
-                Job ID: {jobId}
-              </span>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               {isGenerating && (
                 <span className="flex items-center gap-1">
                   <Loader2 className="h-3 w-3 animate-spin" />
