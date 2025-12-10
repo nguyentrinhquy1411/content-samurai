@@ -34,7 +34,7 @@ export function ServiceStatus() {
             message: "API returned an error",
           });
         }
-      } catch (error) {
+      } catch {
         setApiStatus({
           status: "unhealthy",
           message: "Cannot connect to API server",
@@ -51,22 +51,24 @@ export function ServiceStatus() {
   const getStatusIcon = () => {
     switch (apiStatus.status) {
       case "healthy":
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-chart-1" />;
       case "unhealthy":
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+        return <AlertCircle className="h-4 w-4 text-destructive" />;
       case "checking":
-        return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+        return (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        );
     }
   };
 
   const getStatusColor = () => {
     switch (apiStatus.status) {
       case "healthy":
-        return "text-green-600 bg-green-50 border-green-200";
+        return "text-chart-1 bg-accent/50 border-chart-1/30";
       case "unhealthy":
-        return "text-red-600 bg-red-50 border-red-200";
+        return "text-destructive bg-destructive/10 border-destructive/30";
       case "checking":
-        return "text-gray-600 bg-gray-50 border-gray-200";
+        return "text-muted-foreground bg-muted border-border";
     }
   };
 

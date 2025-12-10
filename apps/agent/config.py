@@ -21,6 +21,27 @@ class Config:
     RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "admin")
     RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "admin123")
 
+    # --- SEO CONFIGURATION ---
+    TARGET_WORD_COUNT = int(os.getenv("TARGET_WORD_COUNT", "2000"))
+    MAX_HEADING_DEPTH = int(os.getenv("MAX_HEADING_DEPTH", "3"))
+    INCLUDE_SCHEMA_MARKUP = os.getenv("INCLUDE_SCHEMA_MARKUP", "true").lower() == "true"
+    READABILITY_TARGET = float(
+        os.getenv("READABILITY_TARGET", "8.0")
+    )  # Flesch-Kincaid grade
+
+    # --- CONTENT ENHANCEMENT ---
+    ENABLE_INTERNAL_LINKING = (
+        os.getenv("ENABLE_INTERNAL_LINKING", "true").lower() == "true"
+    )
+    ENABLE_EXTERNAL_SUGGESTIONS = (
+        os.getenv("ENABLE_EXTERNAL_SUGGESTIONS", "true").lower() == "true"
+    )
+    ENABLE_IMAGE_SUGGESTIONS = (
+        os.getenv("ENABLE_IMAGE_SUGGESTIONS", "true").lower() == "true"
+    )
+    MIN_H2_SECTIONS = int(os.getenv("MIN_H2_SECTIONS", "5"))
+    MIN_H3_PER_H2 = int(os.getenv("MIN_H3_PER_H2", "2"))
+
     # Thiết lập kiểm tra key
     @classmethod
     def check_keys(cls):
