@@ -1,26 +1,22 @@
 import sys
 
-import uvicorn
-
-from .config import CONFIG
+from app.api.main import main as worker_main
+from config import CONFIG
 
 
 def main():
     print("=" * 50)
-    print("Content Samurai Agent")
+    print("Content Samurai Agent Worker")
     print("=" * 50)
     print(f"LLM Model: {CONFIG.LLM_MODEL}")
     print(f"Redis: {CONFIG.REDIS_HOST}:{CONFIG.REDIS_PORT}")
+    print(f"RabbitMQ: {CONFIG.RABBITMQ_HOST}:{CONFIG.RABBITMQ_PORT}")
     print("=" * 50)
-    print("Agent is ready!")
-    print("=" * 50)
-    print("Starting API server on http://0.0.0.0:8000")
+    print("Starting Worker...")
     print("=" * 50)
 
-    # Start the FastAPI server
-    uvicorn.run(
-        "app.api.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
-    )
+    # Start the RabbitMQ worker
+    worker_main()
 
 
 if __name__ == "__main__":

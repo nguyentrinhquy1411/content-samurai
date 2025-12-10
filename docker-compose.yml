@@ -4,18 +4,26 @@ services:
     container_name: content-samurai-rabbit
     hostname: samurai-rabbit
     ports:
-      # AMQP protocol (for app/worker connections)
-      - "5672:5672"
-      # Management UI (for your browser)
-      - "15672:15672"
+      - "${RABBITMQ_PORT:-5672}:5672" # AMQP
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672" # Management UI
     environment:
-      # Set credentials from environment variables
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     volumes:
-      # Keeps your queues/settings safe on the host machine
       - rabbit_data:/var/lib/rabbitmq
+    restart: always
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: content-samurai-redis
+    hostname: samurai-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
     restart: always
 
 volumes:
   rabbit_data:
+  redis_data:

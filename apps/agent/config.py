@@ -16,6 +16,10 @@ class Config:
 
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+    RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+    RABBITMQ_DEFAULT_USER = os.getenv("RABBITMQ_DEFAULT_USER", "admin")
+    RABBITMQ_DEFAULT_PASS = os.getenv("RABBITMQ_DEFAULT_PASS", "admin123")
 
     # Thiết lập kiểm tra key
     @classmethod
@@ -32,6 +36,14 @@ class Config:
             raise ValueError("REDIS_HOST is not set")
         if not cls.REDIS_PORT:
             raise ValueError("REDIS_PORT is not set")
+        if not cls.RABBITMQ_HOST:
+            raise ValueError("RABBITMQ_HOST is not set")
+        if not cls.RABBITMQ_PORT:
+            raise ValueError("RABBITMQ_PORT is not set")
+        if not cls.RABBITMQ_DEFAULT_USER:
+            raise ValueError("RABBITMQ_DEFAULT_USER is not set")
+        if not cls.RABBITMQ_DEFAULT_PASS:
+            raise ValueError("RABBITMQ_DEFAULT_PASS is not set")
         print("All keys are set!!")
 
 

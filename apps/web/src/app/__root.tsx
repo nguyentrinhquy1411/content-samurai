@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
+import "../app.css";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -13,7 +14,7 @@ export const Route = createRootRoute({
         name: "viewport",
         content: "width=device-width, initial-scale=1",
       },
-      { title: "TanStack Start Starter" },
+      { title: "Content Samurai - AI Blog Generator" },
     ],
   }),
   component: RootLayout,

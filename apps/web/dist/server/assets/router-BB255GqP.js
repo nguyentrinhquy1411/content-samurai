@@ -16,7 +16,7 @@ const Route$1 = createRootRoute({
         name: "viewport",
         content: "width=device-width, initial-scale=1",
       },
-      { title: "TanStack Start Starter" },
+      { title: "Content Samurai - AI Blog Generator" },
     ],
   }),
   component: RootLayout,
@@ -37,7 +37,7 @@ function RootLayout() {
     ],
   });
 }
-const $$splitComponentImporter = () => import("./index-Cl8qOOlf.js");
+const $$splitComponentImporter = () => import("./index-DTL2XwuX.js");
 const Route = createFileRoute("/")({
   component: lazyRouteComponent($$splitComponentImporter, "component"),
 });

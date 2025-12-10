@@ -1,155 +1,85 @@
 import json
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+import pika
+import redis
 
-from app.workers.content_agent import create_seo_blog, stream_seo_blog
-from app.workers.tools import search_and_get_results
+from app.workers.content_agent import stream_seo_blog
 from config import CONFIG
 
-app = FastAPI(
-    title="Content Samurai Agent API",
-    description="API for content generation agent",
-    version="0.1.0",
-)
 
-
-# Request/Response Models
-class CreateBlogRequest(BaseModel):
-    topic: str
-
-
-class SearchRequest(BaseModel):
-    topic: str
-
-
-class CreateBlogResponse(BaseModel):
-    topic: str
-    content: str
-    success: bool
-
-
-class ConfigResponse(BaseModel):
-    llm_model: str
-    redis_host: str
-    redis_port: int
-
-
-# Endpoints
-@app.get("/")
-async def root():
-    return {
-        "message": "Content Samurai Agent API is running",
-        "version": "0.1.0",
-        "endpoints": {
-            "health": "/health",
-            "config": "/config",
-            "create_blog": "/api/create-blog",
-            "create_blog_stream": "/api/create-blog/stream",
-        },
-    }
-
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy", "service": "content-samurai-agent"}
-
-
-@app.get("/config", response_model=ConfigResponse)
-async def get_config():
-    """Get current configuration (without sensitive data)."""
-    return {
-        "llm_model": CONFIG.LLM_MODEL,
-        "redis_host": CONFIG.REDIS_HOST,
-        "redis_port": CONFIG.REDIS_PORT,
-    }
-
-
-@app.post("/api/create-blog", response_model=CreateBlogResponse)
-async def create_blog(request: CreateBlogRequest):
-    """
-    Create an SEO-optimized blog post using the content agent worker.
-    Returns the complete blog post after generation finishes.
-
-    Example:
-        POST /api/create-blog
-        {
-            "topic": "How to make Phở in 2025"
-        }
-    """
-    if not request.topic or len(request.topic.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Topic cannot be empty")
-
-    try:
-        content = create_seo_blog(request.topic)
-        return {
-            "topic": request.topic,
-            "content": content,
-            "success": content is not None,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Blog creation failed: {str(e)}")
-
-
-@app.post("/api/create-blog/stream")
-async def create_blog_stream(request: CreateBlogRequest):
-    """
-    Create an SEO-optimized blog post using streaming (Server-Sent Events).
-    Streams content chunks as they are generated.
-
-    Example:
-        POST /api/create-blog/stream
-        {
-            "topic": "How to make Phở in 2025"
-        }
-    """
-    if not request.topic or len(request.topic.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Topic cannot be empty")
-
-    async def generate_stream():
-        try:
-            async for chunk in stream_seo_blog(request.topic):
-                # Format as SSE with JSON-encoded data
-                data = json.dumps({"chunk": chunk})
-                yield f"data: {data}\n\n"
-            # Send completion signal
-            yield "data: " + json.dumps({"done": True}) + "\n\n"
-        except Exception as e:
-            error_data = json.dumps({"error": str(e)})
-            yield f"data: {error_data}\n\n"
-
-    return StreamingResponse(
-        generate_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
+def main():
+    # Connect Redis
+    redis_client = redis.Redis(
+        host=CONFIG.REDIS_HOST, port=CONFIG.REDIS_PORT, decode_responses=True
     )
 
+    # Connect RabbitMQ
+    credentials = pika.PlainCredentials(
+        CONFIG.RABBITMQ_DEFAULT_USER, CONFIG.RABBITMQ_DEFAULT_PASS
+    )
+    parameters = pika.ConnectionParameters(
+        host=CONFIG.RABBITMQ_HOST,
+        port=CONFIG.RABBITMQ_PORT,
+        credentials=credentials,
+    )
+    connection = pika.BlockingConnection(parameters)
+    channel = connection.channel()
 
-@app.post("/api/search")
-async def search_content(request: SearchRequest):
-    """
-    Search for content sources on a given topic.
+    queue_name = "blog_jobs"
+    channel.queue_declare(queue=queue_name, durable=True)
 
-    Example:
-        POST /api/search
-        {
-            "topic": "How to make Phở in 2025"
-        }
-    """
-    if not request.topic or len(request.topic.strip()) == 0:
-        raise HTTPException(status_code=400, detail="Topic cannot be empty")
+    # QoS: chỉ 1 job mỗi lần, chờ ack xong mới nhận job khác
+    channel.basic_qos(prefetch_count=1)
 
+    def on_message(ch, method, header, body):
+        job = json.loads(body)
+        job_id = job.get("job_id")
+        topic = job.get("topic")
+        if not job_id or not topic:
+            # invalid job, ack and skip
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            return
+        channel_name = f"stream:{job_id}"
+        try:
+            print(
+                f"[Worker] Received job {job_id}, topic '{topic}' — streaming to Redis channel '{channel_name}'"
+            )
+
+            # Stream via your existing agent
+            for chunk in stream_seo_blog(topic):
+                # publish each chunk
+                redis_client.publish(channel_name, chunk)
+
+            # send done signal
+            redis_client.publish(channel_name, "__DONE__")
+            print(f"[Worker] Job {job_id} done")
+
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+
+        except Exception as e:
+            # On error, optionally publish error to redis
+            err = f"__ERROR__:{str(e)}"
+            try:
+                redis_client.publish(channel_name, err)
+            except Exception:
+                pass
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+            print(f"[Worker] Job {job_id} failed: {e}")
+
+    channel.basic_consume(
+        queue=queue_name,
+        on_message_callback=on_message,
+        auto_ack=True,  # dùng manual ack
+    )
+
+    print("[Worker] Waiting for jobs...")
     try:
-        context = search_and_get_results(request.topic)
-        return {
-            "topic": request.topic,
-            "context": context,
-            "success": context is not None and len(context) > 0,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        channel.stop_consuming()
+    finally:
+        connection.close()
+
+
+if __name__ == "__main__":
+    main()

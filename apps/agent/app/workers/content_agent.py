@@ -46,7 +46,7 @@ def create_seo_blog(topic: str):
     return full_content
 
 
-async def stream_seo_blog(topic: str) -> AsyncGenerator[str, None]:
+def stream_seo_blog(topic: str):
     """
     Stream an SEO-optimized blog post as chunks are generated.
     Yields content chunks as they are produced by the LLM.
@@ -74,16 +74,8 @@ async def stream_seo_blog(topic: str) -> AsyncGenerator[str, None]:
         ("human", f"Topic: {topic}\n\nSearch Context:\n{context}"),
     ]
 
-    print("--- Writing the SEO Post (Streaming) ---")
-
     # Stream the LLM response (synchronous generator, yield in async context)
     for chunk in llm.stream(messages):
         content_chunk = chunk.content
         if isinstance(content_chunk, str) and content_chunk:
-            print(content_chunk, end="", flush=True)
-            # Yield the chunk for SSE
             yield content_chunk
-            # Yield control to event loop to allow other tasks
-            await asyncio.sleep(0)
-
-    print("\n\n--- Done (Streaming) ---")
