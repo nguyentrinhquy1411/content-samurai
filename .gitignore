@@ -71,3 +71,8 @@ htmlcov/
 # Turbo repo cache
 .turbo/
 .tanstack/
+# Build files
+dist/
+build/
+**/dist
+

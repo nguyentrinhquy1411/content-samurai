@@ -69,7 +69,7 @@ def main():
     channel.basic_consume(
         queue=queue_name,
         on_message_callback=on_message,
-        auto_ack=True,  # dùng manual ack
+        auto_ack=False,  # dùng manual ack
     )
 
     print("[Worker] Waiting for jobs...")
